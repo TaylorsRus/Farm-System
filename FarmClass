@@ -1,4 +1,3 @@
-```lua
 local FarmClass = {}
 FarmClass.__index = FarmClass
 
@@ -86,4 +85,3 @@ function FarmClass:Harvest()
 end
 
 return FarmClass
-```
