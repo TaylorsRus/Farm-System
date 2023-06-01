@@ -1,0 +1,87 @@
+local FarmClass = {}
+FarmClass.__index = FarmClass
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local CropData = require(ReplicatedStorage.CropData)
+
+local CROP_PLANT_TIME = 5
+local CROP_GROW_TIME = 5
+local CROP_HARVEST_TIME = 5
+
+function FarmClass.new(Plot)
+	local self = setmetatable({}, FarmClass)
+	self.Name = Plot.Name
+	self.Plot = Plot
+	
+	self.Prompt = Plot:FindFirstChildOfClass("ProximityPrompt")
+	
+	self.Progress = 0
+	
+	self.Ripe = false
+	self.Planting = false
+	self.Growing = false
+	
+	return self
+end
+
+function FarmClass:Plant(Crop, Player)	
+	if self.Planting then return end
+	
+	local Character = Player.Character
+	local Humanoid = Character:FindFirstChild("Humanoid")
+	local CachedSpeed = Humanoid.WalkSpeed
+	
+	self.Planting = true
+	self.Owner = Player
+
+	self.Plot.Transparency = 1
+	self.Prompt.Enabled = false	
+	
+	Humanoid.WalkSpeed, Humanoid.AutoRotate = 0, false
+	print("Planting at:",self.Name.."...")		
+	task.wait(CROP_PLANT_TIME)
+	
+	self.Crop = Crop
+	
+	self.Planting = false
+	self.Plot:SetAttribute("Occupied", true)
+	
+	Humanoid.WalkSpeed, Humanoid.AutoRotate = CachedSpeed, true
+	print("Crop planted!")
+	self:Grow()
+end
+
+function FarmClass:Grow()
+	local StartTime = os.clock()
+	
+	if self.Growing then return end
+	self.Growing = true
+	
+	repeat 
+		local DeltaTime = os.clock() - StartTime
+		local Percentage = (DeltaTime / CROP_GROW_TIME) * 100
+		Percentage = math.floor(Percentage >= 100 and 100 or Percentage)
+
+		self.Progress = Percentage
+		self.Plot.Transparency = (100 - Percentage) / 100
+		print("Percentage done:",Percentage.."%")
+		task.wait(.1)
+	until DeltaTime >= CROP_GROW_TIME	
+	
+	self.Ripe = true
+	self.Growing = false
+	self.Prompt.Enabled = true
+	print("Crop fully grown.")
+end
+
+function FarmClass:Harvest()
+	if not self.Ripe then warn("Crop not fully grown.") return end
+	
+	self.Plot.Transparency = 1	
+	self.Plot:SetAttribute("Occupied", false)
+	print("Crop harvested.")
+end
+
+return FarmClass
