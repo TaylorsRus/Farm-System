@@ -1,4 +1,4 @@
-```ruby
+```lua
 local FarmClass = {}
 FarmClass.__index = FarmClass
 
